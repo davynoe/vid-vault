@@ -10,6 +10,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import "../global.css";
 import * as FileSystem from "expo-file-system";
+import { shareAsync } from "expo-sharing";
 export default function Index() {
   const downloadVideo = async () => {
     const filename = "don-quixote.mp4";
@@ -76,7 +77,4 @@ export default function Index() {
       </TouchableOpacity>
     </SafeAreaView>
   );
-}
-function shareAsync(uri: string) {
-  throw new Error("Function not implemented.");
 }
