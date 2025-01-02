@@ -11,40 +11,61 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import AntDesign from "@expo/vector-icons/AntDesign";
 import "../global.css";
 import * as FileSystem from "expo-file-system";
-import { shareAsync } from "expo-sharing";
 import * as MediaLibrary from "expo-media-library";
 import { useEffect, useState } from "react";
 import DownloadingModal from "@/components/DownloadingModal";
 import GetLinkModal from "@/components/GetLinkModal";
+import Entypo from "@expo/vector-icons/Entypo";
+import * as Notifications from "expo-notifications";
+
+const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL;
+
+/* make notifications visible when theyre called */
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: false,
+    shouldSetBadge: false,
+  }),
+});
 
 export default function Index() {
   const [progress, setProgress] = useState(0);
-  const [hasPermission, setHasPermission] = useState(false);
+  const [hasMediaPermission, setHasMediaPermission] = useState(false);
+  const [hasNotificationPermission, setHasNotificationPermission] =
+    useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const [pressedDownload, setPressedDownload] = useState(false);
-  const [videos, setVideos] = useState<any[]>([]); // State to store video assets
-  const [thumbnails, setThumbnails] = useState<any[]>([]); // State to store video thumbnails
+  const [thumbnails, setThumbnails] = useState<string[]>([]); // State to store video thumbnails
 
   /* Request permissions at the start */
   useEffect(() => {
     const requestPermissions = async () => {
       if (Platform.OS === "android") {
-        const { status } = await MediaLibrary.requestPermissionsAsync();
-        setHasPermission(status === "granted");
+        /* request Media perms */
+        const mediaStatus = await MediaLibrary.requestPermissionsAsync();
+        setHasMediaPermission(mediaStatus.status === "granted");
+
+        /* request notification perms */
+        const notificationStatus =
+          await Notifications.requestPermissionsAsync();
+        setHasNotificationPermission(notificationStatus.status === "granted");
       } else {
-        setHasPermission(true); /* No extra permission needed for iOS */
+        setHasMediaPermission(true);
+        setHasNotificationPermission(true); // Set as granted by default for iOS
       }
     };
+
     requestPermissions();
   }, []);
 
   /* Fetch videos from "VidVault" album */
   useEffect(() => {
     fetchVideos();
-  }, [hasPermission]);
+  }, [hasMediaPermission]);
 
   const fetchVideos = async () => {
-    if (hasPermission) {
+    if (hasMediaPermission) {
       try {
         const albums = await MediaLibrary.getAlbumsAsync();
         const vidVaultAlbum = albums.find(
@@ -56,7 +77,6 @@ export default function Index() {
             album: vidVaultAlbum.id,
             mediaType: [MediaLibrary.MediaType.video],
           });
-          setVideos(assets.assets); // Store the video assets
           fetchThumbnails(assets.assets); // Fetch thumbnails for each video
         }
       } catch (error) {
@@ -78,15 +98,13 @@ export default function Index() {
 
   /* Handle download */
   const downloadVideo = async (videoUrl: string) => {
-    if (!hasPermission) {
+    if (!hasMediaPermission) {
       alert("Please grant storage permissions.");
       return;
     }
     setIsDownloading(true);
     const downloadInfo = await getDownloadInfo(videoUrl);
-    const url = downloadInfo?.url;
-    const title = downloadInfo?.title;
-    const uploader = downloadInfo?.uploader;
+    const { url, title, uploader, description } = downloadInfo;
     console.log(`Downloading video: ${title} by ${uploader}`);
     const filename = `${title}.mp4`;
     if (!url) {
@@ -102,10 +120,10 @@ export default function Index() {
         FileSystem.documentDirectory + filename,
         {},
         (downloadProgress) => {
-          console.log("Download progress:", downloadProgress);
           const progress =
             downloadProgress.totalBytesWritten /
             downloadProgress.totalBytesExpectedToWrite;
+          console.log(`Download progress: ${Math.floor(progress * 100)}%`);
           setProgress(progress);
         }
       );
@@ -113,24 +131,41 @@ export default function Index() {
 
       if (result && result.uri) {
         const { uri } = result;
-        console.log("Download finished at:", uri);
-        setIsDownloading(false);
-        await saveVideoToGallery(uri, filename);
+        console.log("Download finished.");
+
+        await saveVideoToGallery(uri);
+        sendCompleteNotification(title, uploader);
+
         fetchVideos(); // Refetch videos after download
       } else {
         console.error("Download failed: No URI returned");
       }
     } catch (error) {
       console.error("Download failed", error);
+    } finally {
       setIsDownloading(false);
+      setProgress(0);
     }
+  };
+
+  const sendCompleteNotification = async (title: string, uploader: string) => {
+    if (!hasNotificationPermission) {
+      console.error("Notification permissions not granted");
+      return;
+    }
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "Download completed",
+        body: `Video "${title} - ${uploader}" is saved to gallery.`,
+      },
+      trigger: null,
+    });
   };
 
   const getDownloadInfo = async (videoUrl: string) => {
     try {
-      const response = await fetch(
-        `http://192.168.1.105:8000/download?url=${videoUrl}`
-      );
+      const response = await fetch(`${SERVER_URL}/download?url=${videoUrl}`);
       if (!response.ok) {
         throw new Error(`HTTP error! Status: ${response.status}`);
       }
@@ -142,15 +177,16 @@ export default function Index() {
     }
   };
 
-  const saveVideoToGallery = async (uri: string, filename: string) => {
+  const saveVideoToGallery = async (uri: string) => {
     try {
       const asset = await MediaLibrary.createAssetAsync(uri);
       await MediaLibrary.createAlbumAsync("VidVault", asset, false);
       console.log("Video saved to gallery");
-      await FileSystem.deleteAsync(uri); // Delete after saving
     } catch (error) {
       console.error("Failed to save video to gallery", error);
-      shareAsync(uri); // Fallback to sharing
+    } finally {
+      await FileSystem.deleteAsync(uri, { idempotent: true });
+      console.log("Original video removed from cache");
     }
   };
 
@@ -174,15 +210,21 @@ export default function Index() {
         keyExtractor={(item, index) => index.toString()}
         numColumns={3}
         columnWrapperStyle={{
-          justifyContent: "space-between",
+          columnGap: 15,
         }}
         renderItem={({ item }) => (
-          <View className="w-[30%] aspect-square mb-2.5">
+          <Pressable className="w-[30%] flex items-center justify-center aspect-square mb-2.5">
             <Image
               source={{ uri: item }}
               className="w-full h-full rounded-xl"
             />
-          </View>
+            <Entypo
+              name="controller-play"
+              size={50}
+              color="white"
+              className="absolute"
+            />
+          </Pressable>
         )}
       />
 
@@ -193,7 +235,7 @@ export default function Index() {
         <AntDesign name="download" size={28} color="white" />
       </TouchableOpacity>
 
-      <DownloadingModal isOpen={isDownloading} />
+      <DownloadingModal isOpen={isDownloading} progress={progress} />
       <GetLinkModal
         isOpen={pressedDownload}
         onClose={() => setPressedDownload(false)}

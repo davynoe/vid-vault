@@ -1,5 +1,6 @@
 interface DownloadingModalProps {
   isOpen: boolean;
+  progress: number;
 }
 
 interface GetLinkModalProps {
