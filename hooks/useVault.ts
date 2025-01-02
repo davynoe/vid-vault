@@ -10,7 +10,7 @@ const useVault = () => {
       }
       await db.execAsync(
         `CREATE TABLE IF NOT EXISTS videos (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id INTEGER PRIMARY KEY NOT NULL,
           title TEXT NOT NULL,
           uploader TEXT NOT NULL,
           description TEXT
@@ -23,6 +23,7 @@ const useVault = () => {
   };
 
   const addVideoDataToVault = async (
+    id: string,
     title: string,
     uploader: string,
     description: string
@@ -40,8 +41,8 @@ const useVault = () => {
       }
 
       await db.runAsync(
-        `INSERT INTO videos (title, uploader, description) VALUES (?, ?, ?);`,
-        [title, uploader, description || ""]
+        `INSERT INTO videos (id, title, uploader, description) VALUES (?, ?, ?, ?);`,
+        [id, title, uploader, description || ""]
       );
       console.log(`Video data added: ${title}, ${uploader}`);
     } catch (error) {
@@ -49,9 +50,27 @@ const useVault = () => {
     }
   };
 
+  const getVideoDataFromVault = async (id: string) => {
+    try {
+      const db = await SQLite.openDatabaseAsync("vault.db");
+      if (!db) {
+        console.error("Failed to open database.");
+        return;
+      }
+
+      const result = await db.getAllAsync(
+        `SELECT * FROM videos`,
+      );
+      return result;
+    } catch (error) {
+      console.error("Error getting video data from vault:", error);
+    }
+  };
+
   return {
     initVault,
     addVideoDataToVault,
+    getVideoDataFromVault,
   };
 };
 

@@ -5,19 +5,22 @@ import { useState } from "react";
 
 const useMedia = () => {
   const [hasMediaPermission, setHasMediaPermission] = useState(false);
-  const [thumbnails, setThumbnails] = useState<string[]>([]);
+  const [thumbnails, setThumbnails] = useState<{uri: string, id: string}[]>([]);
 
   const saveVideoToGallery = async (uri: string) => {
     try {
       const asset = await MediaLibrary.createAssetAsync(uri);
       await MediaLibrary.createAlbumAsync("VidVault", asset, false);
       console.log("Video saved to gallery");
+      return asset;
     } catch (error) {
       console.error("Failed to save video to gallery", error);
-    } finally {
-      await FileSystem.deleteAsync(uri, { idempotent: true });
-      console.log("Original video removed from cache");
-    }
+    } 
+  };
+
+  const deleteUri = async (uri: string) => {
+    await FileSystem.deleteAsync(uri);
+    console.log("Deleted video from cache");
   };
 
   const requestMediaPermission = async () => {
@@ -33,7 +36,7 @@ const useMedia = () => {
     const thumbnails = await Promise.all(
       assets.map(async (asset) => {
         const { uri } = await MediaLibrary.getAssetInfoAsync(asset.id);
-        return uri;
+        return { uri, id: asset.id };
       })
     );
     setThumbnails(thumbnails); // Set the fetched thumbnails
@@ -66,6 +69,7 @@ const useMedia = () => {
     requestMediaPermission,
     fetchVideos,
     saveVideoToGallery,
+    deleteUri,
   }
 }
 

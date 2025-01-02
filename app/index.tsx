@@ -8,8 +8,6 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AntDesign from "@expo/vector-icons/AntDesign";
-import "../global.css";
-
 import { useEffect, useState } from "react";
 import DownloadingModal from "@/components/DownloadingModal";
 import GetLinkModal from "@/components/GetLinkModal";
@@ -18,11 +16,12 @@ import useVault from "@/hooks/useVault";
 import useMedia from "@/hooks/useMedia";
 import useDownload from "@/hooks/useDownload";
 import useNotification from "@/hooks/useNotification";
+import "../global.css";
 
 export default function Index() {
   const [pressedDownload, setPressedDownload] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
-  const { initVault, addVideoDataToVault } = useVault();
+  const { initVault, addVideoDataToVault, getVideoDataFromVault } = useVault();
 
   const {
     hasMediaPermission,
@@ -30,6 +29,7 @@ export default function Index() {
     requestMediaPermission,
     fetchVideos,
     saveVideoToGallery,
+    deleteUri,
   } = useMedia();
 
   const { progress, downloadVideo, getDownloadInfo } = useDownload({
@@ -59,21 +59,32 @@ export default function Index() {
   };
 
   const handleDownload = async (videoUrl: string) => {
-    setIsDownloading(true);
-    const downloadInfo = await getDownloadInfo(videoUrl);
-    const { url, title, uploader, description } = downloadInfo;
-    const uri = await downloadVideo(url, title, uploader, description);
-    if (uri) {
-      await addVideoDataToVault(title, uploader, description);
-      await saveVideoToGallery(uri);
+    let uri: null | string = null;
+    try {
+      setIsDownloading(true);
+      const downloadInfo = await getDownloadInfo(videoUrl);
+      const { url, title, uploader, description } = downloadInfo;
+      const uri = await downloadVideo(url, title, uploader, description);
+      const asset = await saveVideoToGallery(uri!);
+      console.log("Adding video", title, "by", uploader);
+      await addVideoDataToVault(asset!.id, title, uploader, description);
       if (hasNotificationPermission) {
-        await sendCompleteNotification(title, uploader);
+        sendCompleteNotification(title, uploader);
       }
       fetchVideos();
-    } else {
-      console.error("Download failed, couldn't get uri");
+    } catch (error) {
+      console.error("Error downloading video:", error);
+    } finally {
+      if (uri) {
+        deleteUri(uri);
+      }
+      setIsDownloading(false);
     }
-    setIsDownloading(false);
+  };
+
+  const handleVideoPress = async (id: string) => {
+    const videoData = await getVideoDataFromVault(id);
+    console.log(videoData);
   };
 
   return (
@@ -99,9 +110,12 @@ export default function Index() {
           columnGap: 15,
         }}
         renderItem={({ item }) => (
-          <Pressable className="w-[30%] flex items-center justify-center aspect-square mb-2.5">
+          <Pressable
+            className="w-[30%] flex items-center justify-center aspect-square mb-2.5"
+            onPress={() => handleVideoPress(item.id)}
+          >
             <Image
-              source={{ uri: item }}
+              source={{ uri: item.uri }}
               className="w-full h-full rounded-xl"
             />
             <Entypo

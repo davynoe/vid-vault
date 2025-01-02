@@ -4,6 +4,7 @@ const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
 const useDownload = ({hasMediaPermission}: {hasMediaPermission: boolean}) => {
   const [progress, setProgress] = useState(0);
+  
   const downloadVideo = async (url: string, title: string, uploader: string, description: string) => {
     if (!hasMediaPermission) {
       alert("Please grant storage permissions.");
@@ -40,6 +41,7 @@ const useDownload = ({hasMediaPermission}: {hasMediaPermission: boolean}) => {
       }
     } catch (error) {
       console.error("Download failed", error);
+      FileSystem.deleteAsync(FileSystem.documentDirectory + filename);
     } finally {
       setProgress(0);
     }
