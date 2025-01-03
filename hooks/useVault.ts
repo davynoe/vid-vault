@@ -51,6 +51,8 @@ const useVault = () => {
   };
 
   const getVideoDataFromVault = async (id: string) => {
+    const correspondingId = Number(id) - 1;
+    console.log(correspondingId);
     try {
       const db = await SQLite.openDatabaseAsync("vault.db");
       if (!db) {
@@ -59,7 +61,8 @@ const useVault = () => {
       }
 
       const result = await db.getAllAsync(
-        `SELECT * FROM videos`,
+        `SELECT * FROM videos WHERE id = ?;`,
+        [correspondingId]
       );
       return result;
     } catch (error) {

@@ -66,10 +66,12 @@ export default function Index() {
       const { url, title, uploader, description } = downloadInfo;
       const uri = await downloadVideo(url, title, uploader, description);
       const asset = await saveVideoToGallery(uri!);
+
       console.log("Adding video", title, "by", uploader);
+      console.log("Video id:", asset!.id);
       await addVideoDataToVault(asset!.id, title, uploader, description);
       if (hasNotificationPermission) {
-        sendCompleteNotification(title, uploader);
+        sendCompleteNotification(title);
       }
       fetchVideos();
     } catch (error) {

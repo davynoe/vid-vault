@@ -24,7 +24,7 @@ const useNotification = () => {
     }
   };
 
-  const sendCompleteNotification = async (title: string, uploader: string) => {
+  const sendCompleteNotification = async (title: string) => {
     if (!hasNotificationPermission) {
       console.error("Notification permissions not granted");
       return;
@@ -33,7 +33,7 @@ const useNotification = () => {
     await Notifications.scheduleNotificationAsync({
       content: {
         title: "Download completed",
-        body: `Video "${title} - ${uploader}" is saved to gallery.`,
+        body: `Video "${title}" is saved to gallery.`,
       },
       trigger: null,
     });
