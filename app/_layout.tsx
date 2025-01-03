@@ -12,10 +12,13 @@ if (Platform.OS === "android") {
 StatusBar.setBackgroundColor("#ffffff01");
 StatusBar.setBarStyle("light-content");
 
-export default function RootLayout() {
+const RootLayout = () => {
   return (
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
+      <Stack.Screen name="player" />
     </Stack>
   );
-}
+};
+
+export default RootLayout;

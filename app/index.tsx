@@ -17,8 +17,9 @@ import useMedia from "@/hooks/useMedia";
 import useDownload from "@/hooks/useDownload";
 import useNotification from "@/hooks/useNotification";
 import "../global.css";
+import { router } from "expo-router";
 
-export default function Index() {
+const Index = () => {
   const [pressedDownload, setPressedDownload] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
   const { initVault, addVideoDataToVault, getVideoDataFromVault } = useVault();
@@ -69,7 +70,12 @@ export default function Index() {
 
       console.log("Adding video", title, "by", uploader);
       console.log("Video id:", asset!.id);
-      await addVideoDataToVault(asset!.id, title, uploader, description);
+      await addVideoDataToVault({
+        id: asset!.id,
+        title,
+        uploader,
+        description,
+      });
       if (hasNotificationPermission) {
         sendCompleteNotification(title);
       }
@@ -84,9 +90,10 @@ export default function Index() {
     }
   };
 
-  const handleVideoPress = async (id: string) => {
+  const handleVideoPress = async (id: string, uri: string) => {
     const videoData = await getVideoDataFromVault(id);
     console.log(videoData);
+    router.push({ pathname: "/player", params: { uri, ...videoData } });
   };
 
   return (
@@ -114,7 +121,7 @@ export default function Index() {
         renderItem={({ item }) => (
           <Pressable
             className="w-[30%] flex items-center justify-center aspect-square mb-2.5"
-            onPress={() => handleVideoPress(item.id)}
+            onPress={() => handleVideoPress(item.id, item.uri)}
           >
             <Image
               source={{ uri: item.uri }}
@@ -145,4 +152,6 @@ export default function Index() {
       />
     </SafeAreaView>
   );
-}
+};
+
+export default Index;

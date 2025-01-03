@@ -22,13 +22,8 @@ const useVault = () => {
     }
   };
 
-  const addVideoDataToVault = async (
-    id: string,
-    title: string,
-    uploader: string,
-    description: string
-  ) => {
-    if (!title || !uploader) {
+  const addVideoDataToVault = async (data: VideoData) => {
+    if (!data.title || !data.uploader) {
       console.error("Title and uploader are required to add video data.");
       return;
     }
@@ -42,15 +37,15 @@ const useVault = () => {
 
       await db.runAsync(
         `INSERT INTO videos (id, title, uploader, description) VALUES (?, ?, ?, ?);`,
-        [id, title, uploader, description || ""]
+        [data.id, data.title, data.uploader, data.description || ""]
       );
-      console.log(`Video data added: ${title}, ${uploader}`);
+      console.log(`Video data added: ${data.title}, ${data.uploader}`);
     } catch (error) {
       console.error("Error adding video data to vault:", error);
     }
   };
 
-  const getVideoDataFromVault = async (id: string) => {
+  const getVideoDataFromVault = async (id: string): Promise<VideoData | undefined> => {
     const correspondingId = Number(id) - 1;
     console.log(correspondingId);
     try {
@@ -60,10 +55,11 @@ const useVault = () => {
         return;
       }
 
-      const result = await db.getAllAsync(
+      const result = (await db.getFirstAsync(
         `SELECT * FROM videos WHERE id = ?;`,
         [correspondingId]
-      );
+      )) as VideoData;
+
       return result;
     } catch (error) {
       console.error("Error getting video data from vault:", error);

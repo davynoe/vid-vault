@@ -8,3 +8,18 @@ interface GetLinkModalProps {
   onClose: () => void;
   onConfirm: (url: string) => void;
 }
+
+interface VideoData {
+  id: string;
+  title: string;
+  uploader: string;
+  description: string;
+}
+
+interface PlayerParams {
+  uri: string;
+  id: string;
+  title: string;
+  uploader: string;
+  description: string;
+};
