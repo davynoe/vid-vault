@@ -47,7 +47,7 @@ const useVault = () => {
 
   const getVideoDataFromVault = async (id: string): Promise<VideoData | undefined> => {
     const correspondingId = Number(id) - 1;
-    console.log(correspondingId);
+    console.log("Fetching data from", correspondingId);
     try {
       const db = await SQLite.openDatabaseAsync("vault.db");
       if (!db) {

@@ -16,6 +16,12 @@ interface VideoData {
   description: string;
 }
 
+interface VideoAssetInfo {
+  uri: string;
+  id: string;
+  duration: number;
+}
+
 interface PlayerParams {
   uri: string;
   duration: number;

@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const useMedia = () => {
   const [hasMediaPermission, setHasMediaPermission] = useState(false);
-  const [thumbnails, setThumbnails] = useState<{uri: string, id: string, duration: number}[]>([]);
+  const [videoAssets, setVideoAssets] = useState<VideoAssetInfo[]>([]);
 
   const saveVideoToGallery = async (uri: string) => {
     try {
@@ -32,17 +32,17 @@ const useMedia = () => {
     }
   };
 
-  const fetchThumbnails = async (assets: MediaLibrary.Asset[]) => {
-    const thumbnails = await Promise.all(
+  const fetchVideoAssets = async (assets: MediaLibrary.Asset[]) => {
+    const videoAssets = await Promise.all(
       assets.map(async (asset) => {
         const { uri } = await MediaLibrary.getAssetInfoAsync(asset.id);
         return { uri, id: asset.id, duration: asset.duration };
       })
     );
-    setThumbnails(thumbnails); // Set the fetched thumbnails
+    setVideoAssets(videoAssets);
   };
 
-  const fetchVideos = async () => {
+  const fetchGallery = async () => {
     console.log("Fetching videos from gallery...");
     if (hasMediaPermission) {
       try {
@@ -56,7 +56,7 @@ const useMedia = () => {
             album: vidVaultAlbum.id,
             mediaType: [MediaLibrary.MediaType.video],
           });
-          fetchThumbnails(assets.assets); // Fetch thumbnails for each video
+          fetchVideoAssets(assets.assets); 
         }
       } catch (error) {
         console.error("Failed to fetch videos:", error);
@@ -66,9 +66,9 @@ const useMedia = () => {
 
   return {
     hasMediaPermission,
-    thumbnails,
+    videoAssets,
     requestMediaPermission,
-    fetchVideos,
+    fetchGallery,
     saveVideoToGallery,
     deleteUri,
   }

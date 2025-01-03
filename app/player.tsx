@@ -40,8 +40,6 @@ const Player = () => {
           aspectRatio: 16 / 9,
         }}
         allowsFullscreen
-        allowsPictureInPicture
-        startsPictureInPictureAutomatically
       />
 
       <View className="flex-1 px-4 mt-4">
@@ -52,24 +50,28 @@ const Player = () => {
             source={require("../assets/images/player-icon.png")}
             className="h-8 w-8"
           />
-          <Text className="text-[#ebc5df] text-lg">{uploader}</Text>
-        </View>
-        <ScrollView
-          className="bg-[#94465f] rounded-2xl"
-          contentContainerStyle={{ padding: 10 }}
-        >
-          <Text className="text-white">
-            {description || "No description given."}
+          <Text className="text-[#f5e0ef] text-lg font-semibold">
+            {uploader}
           </Text>
-        </ScrollView>
-        <View className="mt-6">
-          <TouchableOpacity
-            className="bg-white px-5 py-2.5 rounded-3xl flex-row items-center gap-x-2 self-start"
-            onPress={handleBack}
+        </View>
+        <View className="flex-1 flex-col justify-between gap-4">
+          <ScrollView
+            className="bg-[#94465f] rounded-2xl flex-1"
+            contentContainerClassName="py-2 px-3"
           >
-            <Ionicons name="arrow-back" size={24} color="#7a354b" />
-            <Text className="font-semibold text-lg text-[#7a354b]">Back</Text>
-          </TouchableOpacity>
+            <Text className="text-white">
+              {description || "No description given."}
+            </Text>
+          </ScrollView>
+          <View className="mt-4 mb-2">
+            <TouchableOpacity
+              className="bg-white px-5 py-2.5 rounded-3xl flex-row items-center gap-x-2 self-start"
+              onPress={handleBack}
+            >
+              <Ionicons name="arrow-back" size={24} color="#7a354b" />
+              <Text className="font-semibold text-lg text-[#7a354b]">Back</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
     </SafeAreaView>

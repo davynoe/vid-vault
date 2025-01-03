@@ -27,9 +27,9 @@ const Index = () => {
 
   const {
     hasMediaPermission,
-    thumbnails,
+    videoAssets,
     requestMediaPermission,
-    fetchVideos,
+    fetchGallery,
     saveVideoToGallery,
     deleteUri,
   } = useMedia();
@@ -53,7 +53,7 @@ const Index = () => {
 
   useEffect(() => {
     if (hasMediaPermission) {
-      fetchVideos();
+      fetchGallery();
     }
   }, [hasMediaPermission]);
 
@@ -83,7 +83,7 @@ const Index = () => {
       if (hasNotificationPermission) {
         sendCompleteNotification(title);
       }
-      fetchVideos();
+      fetchGallery();
     } catch (error) {
       console.error("Error downloading video:", error);
     } finally {
@@ -100,14 +100,13 @@ const Index = () => {
     duration: number
   ) => {
     const videoData = await getVideoDataFromVault(id);
-    console.log(videoData);
     router.push({
       pathname: "/player",
       params: { uri, duration, ...videoData },
     });
   };
 
-  const handleRefresh = () => fetchVideos();
+  const handleRefresh = () => fetchGallery();
 
   return (
     <SafeAreaView className="w-full h-full bg-[#7a354b] flex-col pt-2 px-5">
@@ -135,32 +134,38 @@ const Index = () => {
           <Ionicons name="refresh" size={28} color="white" />
         </Pressable>
       </View>
-      <FlatList
-        className="flex-1 w-full"
-        data={thumbnails}
-        keyExtractor={(item, index) => index.toString()}
-        numColumns={3}
-        columnWrapperStyle={{
-          columnGap: 15,
-        }}
-        renderItem={({ item }) => (
-          <Pressable
-            className="w-[30%] flex items-center justify-center aspect-square mb-2.5"
-            onPress={() => handleVideoPress(item.id, item.uri, item.duration)}
-          >
-            <Image
-              source={{ uri: item.uri }}
-              className="w-full h-full rounded-xl"
-            />
-            <Entypo
-              name="controller-play"
-              size={50}
-              color="white"
-              className="absolute"
-            />
-          </Pressable>
-        )}
-      />
+      {videoAssets.length === 0 ? (
+        <Text className="text-white text-lg top-[38%] self-center">
+          No videos found. Try downloading one!
+        </Text>
+      ) : (
+        <FlatList
+          className="flex-1 w-full"
+          data={videoAssets}
+          keyExtractor={(item, index) => index.toString()}
+          numColumns={3}
+          columnWrapperStyle={{
+            columnGap: 15,
+          }}
+          renderItem={({ item }) => (
+            <Pressable
+              className="w-[30%] flex items-center justify-center aspect-square mb-2.5"
+              onPress={() => handleVideoPress(item.id, item.uri, item.duration)}
+            >
+              <Image
+                source={{ uri: item.uri }}
+                className="w-full h-full rounded-xl"
+              />
+              <Entypo
+                name="controller-play"
+                size={50}
+                color="white"
+                className="absolute"
+              />
+            </Pressable>
+          )}
+        />
+      )}
 
       <TouchableOpacity
         className="absolute bottom-20 self-center bg-[#a64e6a] flex items-center justify-center p-5 rounded-full"
