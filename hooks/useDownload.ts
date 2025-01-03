@@ -1,10 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import * as FileSystem from "expo-file-system";
 const SERVER_URL = process.env.EXPO_PUBLIC_SERVER_URL;
 
-const useDownload = ({hasMediaPermission}: {hasMediaPermission: boolean}) => {
+const useDownload = ({hasMediaPermission, pressedDownload}: {hasMediaPermission: boolean, pressedDownload: boolean}) => {
   const [progress, setProgress] = useState(0);
   
+  useEffect(() => {
+    if (pressedDownload) {
+      setProgress(0);
+    }
+  }, [pressedDownload]);
+
   const downloadVideo = async (url: string, title: string, uploader: string, description: string) => {
     if (!hasMediaPermission) {
       alert("Please grant storage permissions.");
@@ -42,8 +48,6 @@ const useDownload = ({hasMediaPermission}: {hasMediaPermission: boolean}) => {
     } catch (error) {
       console.error("Download failed", error);
       FileSystem.deleteAsync(FileSystem.documentDirectory + filename);
-    } finally {
-      setProgress(0);
     }
   };
   const getDownloadInfo = async (videoUrl: string) => {

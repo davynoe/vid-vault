@@ -5,7 +5,7 @@ import { useState } from "react";
 
 const useMedia = () => {
   const [hasMediaPermission, setHasMediaPermission] = useState(false);
-  const [thumbnails, setThumbnails] = useState<{uri: string, id: string}[]>([]);
+  const [thumbnails, setThumbnails] = useState<{uri: string, id: string, duration: number}[]>([]);
 
   const saveVideoToGallery = async (uri: string) => {
     try {
@@ -32,17 +32,18 @@ const useMedia = () => {
     }
   };
 
-  const fetchThumbnails = async (assets: any[]) => {
+  const fetchThumbnails = async (assets: MediaLibrary.Asset[]) => {
     const thumbnails = await Promise.all(
       assets.map(async (asset) => {
         const { uri } = await MediaLibrary.getAssetInfoAsync(asset.id);
-        return { uri, id: asset.id };
+        return { uri, id: asset.id, duration: asset.duration };
       })
     );
     setThumbnails(thumbnails); // Set the fetched thumbnails
   };
 
   const fetchVideos = async () => {
+    console.log("Fetching videos from gallery...");
     if (hasMediaPermission) {
       try {
         const albums = await MediaLibrary.getAlbumsAsync();

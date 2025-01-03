@@ -18,6 +18,7 @@ interface VideoData {
 
 interface PlayerParams {
   uri: string;
+  duration: number;
   id: string;
   title: string;
   uploader: string;
